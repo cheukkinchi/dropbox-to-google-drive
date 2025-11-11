@@ -6,6 +6,7 @@ import io
 import logging
 import mimetypes
 import os
+from pathlib import PurePosixPath
 from dataclasses import dataclass
 from typing import Iterable, Iterator, Optional
 
@@ -174,8 +175,15 @@ class DropboxToDriveMigrator:
         relative = path_display.lstrip("/")
         if base:
             base_norm = base.lstrip("/")
-            if relative.lower().startswith(base_norm.lower()):
-                relative = relative[len(base_norm) :].lstrip("/")
+            if base_norm:
+                base_parts = PurePosixPath(base_norm).parts
+                relative_parts = PurePosixPath(relative).parts
+                if len(relative_parts) >= len(base_parts) and all(
+                    rel_part.lower() == base_part.lower()
+                    for base_part, rel_part in zip(base_parts, relative_parts)
+                ):
+                    remaining = relative_parts[len(base_parts) :]
+                    relative = "/".join(remaining)
         return relative
 
 
